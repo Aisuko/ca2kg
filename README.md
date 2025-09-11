@@ -1,7 +1,7 @@
-# Knowledge-based Retrieval-Augmented Generation (KG-RAG)
+# Ca-KG
 
 <p align="center">
-  <strong>Knowledge-based RAG for accurate, calibrated multi-hop reasoning</strong>
+  <strong>Ca-KG</strong>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 
 ## 📋 Abstract
 
-This repository presents a novel **Knowledge-based Retrieval-Augmented Generation (KG-RAG)** framework designed to enhance multi-hop reasoning capabilities while achieving superior calibration performance. Our approach addresses the critical challenge of maintaining both high accuracy and low calibration error in knowledge graph question answering tasks. Through comprehensive experiments on MetaQA and other benchmark datasets, we demonstrate significant improvements in answer quality and computational efficiency. The framework integrates structured knowledge retrieval with advanced generation techniques, resulting in more reliable and accurate responses for complex reasoning scenarios.
+TODO
 
 ---
 
