@@ -8,33 +8,17 @@
   <img src="https://img.shields.io/badge/Python-3.8%2B-blue?style=flat-square&logo=python" alt="Python">
   <img src="https://img.shields.io/badge/Jupyter-Notebook-orange?style=flat-square&logo=jupyter" alt="Jupyter">
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/Paper-arXiv-red?style=flat-square&logo=arxiv" alt="Paper">
 </p>
 
 ---
 
-## 📋 Abstract
+## 🎯 Framework
 
-TODO
-
----
-
-## 🎯 Key Results
-
-<details>
-<summary><strong>📊 Performance Metrics</strong></summary>
-
-### Accuracy Under Token Constraints
 <p align="center">
-  <img src="imgs/fig_accuracy_under_token_caps_metaqa.png" alt="Accuracy under Token Caps" width="700">
+  <img src="imgs/framework.png" alt="Framework" width="700">
 </p>
 
-### Answer Token Efficiency
-<p align="center">
-  <img src="imgs/fig_answer_token_efficiency_metaqa_committed.png" alt="Answer Token Efficiency" width="700">
-</p>
 
-</details>
 
 ---
 
