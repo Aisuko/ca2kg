@@ -1,7 +1,7 @@
-# Ca-KG
+# Ca2KG
 
 <p align="center">
-  <strong>Ca-KG</strong>
+  <strong>Ca2KG</strong>
 </p>
 
 <p align="center">
