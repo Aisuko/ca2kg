@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>When to Trust | Causality-Aware Calibration for KG-RAG</title>
+  <meta name="description" content="When to Trust: A Causality-Aware Calibration Framework for Accurate Knowledge Graph Retrieval-Augmented Generation (WWW 2026)." />
+  <meta name="keywords" content="KG-RAG, causal calibration, knowledge graph, retrieval-augmented generation, WWW 2026" />
+  <meta property="og:title" content="When to Trust | Causality-Aware Calibration for KG-RAG" />
+  <meta property="og:description" content="A causality-aware calibration framework that decides when to trust KG-RAG outputs for accurate, faithful answers." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3e%3ctext y='.9em' font-size='90'%3e🧭%3c/text%3e%3c/svg%3e" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Space Grotesk', 'Sora', 'sans-serif'],
+            body: ['Sora', 'Space Grotesk', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --accent-a: #0ea5e9;
+      --accent-b: #22c55e;
+      --accent-c: #f59e0b;
+      --ink: #0f172a;
+      --mist: rgba(148, 163, 184, 0.18);
+    }
+
+    body {
+      font-family: 'Sora', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 800px at 10% 10%, rgba(14, 165, 233, 0.12), transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(34, 197, 94, 0.12), transparent 55%),
+        radial-gradient(1000px 700px at 50% 90%, rgba(245, 158, 11, 0.18), transparent 60%),
+        #f8fafc;
+      color: var(--ink);
+    }
+
+    .gradient-text {
+      background: linear-gradient(120deg, var(--accent-a), var(--accent-b), var(--accent-c));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .glass-strong {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .ink-card {
+      background: rgba(15, 23, 42, 0.9);
+      color: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .ring-glow {
+      box-shadow: 0 0 40px rgba(14, 165, 233, 0.25), 0 0 80px rgba(245, 158, 11, 0.18);
+    }
+
+    .grid-pattern {
+      background-image: linear-gradient(var(--mist) 1px, transparent 1px),
+        linear-gradient(90deg, var(--mist) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at top, black 20%, transparent 70%);
+    }
+
+    .card-hover {
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-6px) scale(1.01);
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+    }
+
+    .scanline {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scanline::after {
+      content: '';
+      position: absolute;
+      top: -60%;
+      left: -10%;
+      width: 120%;
+      height: 40%;
+      background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: sweep 6s ease-in-out infinite;
+    }
+
+    @keyframes sweep {
+      0% { transform: translateY(-120%); }
+      50% { transform: translateY(140%); }
+      100% { transform: translateY(140%); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.9; }
+    }
+
+    .pulse-glow {
+      animation: pulseGlow 5s ease-in-out infinite;
+    }
+
+    .case-shell {
+      background: linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.95));
+      color: #e2e8f0;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+    }
+
+    .case-chip {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #cbd5f5;
+      transition: all 0.3s ease;
+    }
+
+    .case-chip.active {
+      background: linear-gradient(120deg, var(--accent-a), var(--accent-b));
+      color: #0f172a;
+      border-color: transparent;
+      box-shadow: 0 10px 25px rgba(14, 165, 233, 0.35);
+    }
+
+    .case-step {
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      transition: transform 0.35s ease, box-shadow 0.35s ease, border 0.35s ease;
+    }
+
+    .case-step.active {
+      transform: translateY(-4px);
+      border-color: rgba(56, 189, 248, 0.7);
+      box-shadow: 0 18px 35px rgba(14, 165, 233, 0.25);
+    }
+
+    .case-output {
+      background: rgba(2, 6, 23, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .case-output.hidden {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .case-glow {
+      box-shadow: 0 0 25px rgba(14, 165, 233, 0.25), 0 0 60px rgba(34, 197, 94, 0.2);
+    }
+  </style>
+</head>
+<body class="antialiased">
+  <div class="relative min-h-screen overflow-hidden">
+    <div class="absolute inset-0 -z-10">
+      <div class="absolute inset-0 grid-pattern opacity-60"></div>
+      <div class="absolute top-[-15%] right-[-10%] h-72 w-72 rounded-full bg-sky-400/20 blur-3xl pulse-glow"></div>
+      <div class="absolute bottom-[-20%] left-[-5%] h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl pulse-glow" style="animation-delay: -2s;"></div>
+      <div class="absolute bottom-10 right-1/3 h-64 w-64 rounded-full bg-amber-400/20 blur-3xl pulse-glow" style="animation-delay: -4s;"></div>
+    </div>
+
+    <header class="fixed top-0 w-full z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="glass-strong rounded-2xl px-5 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-11 w-11 rounded-xl ring-glow flex items-center justify-center bg-slate-900 text-white font-bold">WT</div>
+            <div class="hidden sm:block">
+              <p class="text-sm font-semibold gradient-text">When to Trust</p>
+              <p class="text-xs text-slate-500">Causality-Aware KG-RAG Calibration</p>
+            </div>
+          </div>
+          <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+            <a class="text-slate-700 hover:text-slate-900 transition-colors" href="#framework">Framework</a>
+            <a class="text-slate-700 hover:text-slate-900 transition-colors" href="#calibration">Calibration</a>
+            <a class="text-slate-700 hover:text-slate-900 transition-colors" href="#case-study">Case Study</a>
+            <a class="text-slate-700 hover:text-slate-900 transition-colors" href="#results">Results</a>
+          </nav>
+          <div class="flex items-center gap-3 text-sm">
+            <a class="hidden sm:inline-flex px-4 py-2 rounded-xl bg-white/80 border border-slate-200 hover:shadow-xl transition-all duration-300 font-medium" href="#paper">Paper(soon)</a>
+            <a class="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all duration-300 shadow-lg font-medium" href="https://github.com/Aisuko/ca2kg" target="_blank" rel="noreferrer">GitHub</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="relative pt-32 pb-16">
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-12 items-center">
+        <div class="space-y-8 lg:order-1">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-slate-200 shadow-sm">
+            <span class="relative flex h-2 w-2">
+              <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-slate-700 font-semibold text-sm">The Web Conference 2026</span>
+            <span class="text-slate-400 text-sm">·</span>
+            <span class="text-slate-500 text-sm">Web4Good Track</span>
+            <span class="text-slate-400 text-sm">·</span>
+            <span class="text-slate-500 text-sm">Acceptance 21.7% (95/437)</span>
+          </div>
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight font-display">
+            <span class="gradient-text">When to Trust</span>
+            <br />
+            <span class="text-slate-900">Causality-Aware Calibration</span>
+            <br />
+            <span class="text-slate-900">for Accurate KG-RAG</span>
+          </h1>
+          <p class="text-lg text-slate-600 max-w-xl leading-relaxed">
+            We present <span class="font-semibold text-slate-900">Ca2KG</span>, a causality-aware calibration framework that decides when KG-RAG answers
+            are trustworthy by pairing counterfactual prompting with panel-based re-scoring.
+          </p>
+          <div class="flex flex-wrap md:flex-nowrap gap-3">
+            <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all duration-300 shadow-lg font-medium" href="#paper">
+              Read the Paper(soon)
+            </a>
+            <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/80 border border-slate-200 hover:shadow-xl transition-all duration-300 font-medium" href="#calibration">
+              See Calibration
+            </a>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
+            <div class="text-center">
+              <div class="text-3xl font-bold gradient-text">2 + 1</div>
+              <p class="text-sm text-slate-500 mt-1">Interventions + Baseline</p>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl font-bold gradient-text">2</div>
+              <p class="text-sm text-slate-500 mt-1">QA Datasets</p>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl font-bold gradient-text">KG-RAG</div>
+              <p class="text-sm text-slate-500 mt-1">Target System</p>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl font-bold gradient-text">ECE · Brier</div>
+              <p class="text-sm text-slate-500 mt-1">Calibration Metrics</p>
+            </div>
+          </div>
+        </div>
+        <div class="relative lg:order-2 lg:pl-20">
+          <div class="absolute -inset-4 rounded-3xl blur-3xl opacity-50 ring-glow"></div>
+          <div class="relative glass-strong rounded-3xl shadow-2xl p-6 lg:p-8 w-[150%] max-w-none mx-auto">
+            <img src="../imgs/framework.png" alt="Ca2KG framework overview" class="w-full h-auto rounded-2xl" />
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <section id="framework" class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/70 to-transparent"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div class="text-center mb-14">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-slate-200 mb-4">
+          <span class="text-sm font-medium text-slate-700">Framework</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4 font-display">
+          <span class="gradient-text">Causal Calibration</span>
+          <span class="text-slate-900"> for KG-RAG</span>
+        </h2>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+          A modular pipeline that uses counterfactual prompting and panel-based re-scoring to quantify when KG-RAG should be trusted or deferred.
+        </p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass rounded-2xl p-6 card-hover">
+          <div class="text-3xl mb-3">🧭</div>
+          <h3 class="text-lg font-bold mb-2">Counterfactual Prompting</h3>
+          <p class="text-sm text-slate-600">Intervene on path quality and reasoning reliability to expose retrieval-dependent uncertainty.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <div class="text-3xl mb-3">🔍</div>
+          <h3 class="text-lg font-bold mb-2">Panel-based Re-scoring</h3>
+          <p class="text-sm text-slate-600">Aggregate candidate answers across interventions into a unified probability panel.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <div class="text-3xl mb-3">✅</div>
+          <h3 class="text-lg font-bold mb-2">Causal Calibration Index</h3>
+          <p class="text-sm text-slate-600">Score answer stability across interventions to select the calibrated response.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="calibration" class="py-20 bg-slate-900 text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-20" style="background: radial-gradient(circle at top, rgba(14, 165, 233, 0.6), transparent 60%);"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div class="flex flex-col lg:flex-row gap-12 items-center">
+        <div class="lg:w-1/2">
+          <h2 class="text-3xl sm:text-4xl font-bold mb-4 font-display">Calibration Signals</h2>
+          <p class="text-lg text-slate-200 mb-6">Trust is calibrated from three complementary steps that probe retrieval quality, reasoning reliability, and stability across interventions.</p>
+          <div class="space-y-4">
+            <div class="glass rounded-2xl p-4 bg-white/10 border border-white/10">
+              <p class="text-sm uppercase tracking-widest text-slate-300">Signal 01</p>
+              <p class="text-lg font-semibold">Path Quality Intervention (t1)</p>
+              <p class="text-sm text-slate-300">Assumes retrieved paths are weak to reveal hidden uncertainty.</p>
+            </div>
+            <div class="glass rounded-2xl p-4 bg-white/10 border border-white/10">
+              <p class="text-sm uppercase tracking-widest text-slate-300">Signal 02</p>
+              <p class="text-lg font-semibold">Reasoning Reliability (t2)</p>
+              <p class="text-sm text-slate-300">Assumes reasoning failures to test robustness of the answer.</p>
+            </div>
+            <div class="glass rounded-2xl p-4 bg-white/10 border border-white/10">
+              <p class="text-sm uppercase tracking-widest text-slate-300">Signal 03</p>
+              <p class="text-lg font-semibold">Panel Stability (CCI)</p>
+              <p class="text-sm text-slate-300">Combines intervention outputs into a calibrated trust score.</p>
+            </div>
+          </div>
+        </div>
+        <div class="lg:w-1/2">
+          <div class="glass-strong rounded-3xl p-6 shadow-2xl ring-glow">
+            <h3 class="text-xl font-bold text-slate-900 mb-4">Trust Decision Grid</h3>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between rounded-2xl bg-slate-900 text-white px-4 py-3">
+                <span class="text-sm">High evidence + low uncertainty</span>
+                <span class="text-xs font-semibold uppercase">Trust</span>
+              </div>
+              <div class="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-slate-700">
+                <span class="text-sm">Mixed signals across interventions</span>
+                <span class="text-xs font-semibold uppercase">Re-score</span>
+              </div>
+            </div>
+            <p class="text-sm text-slate-500 mt-4">Calibration produces a trust score based on intervention stability.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="case-study" class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-white via-slate-50/70 to-white"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div class="text-center mb-14">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-slate-200 mb-4">
+          <span class="text-sm font-medium text-slate-700">Case Study</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4 font-display">
+          <span class="gradient-text">MetaQA Trace</span>
+          <span class="text-slate-900"> in Action</span>
+        </h2>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+          A live walkthrough of Ca2KG on a MetaQA query, showing counterfactual prompting, panel re-scoring, and the final calibrated answer.
+        </p>
+      </div>
+      <div class="grid lg:grid-cols-2 gap-10 items-start">
+        <div class="space-y-6">
+          <div class="glass rounded-2xl p-6">
+            <p class="text-xs uppercase tracking-widest text-slate-500">Question</p>
+            <p class="text-lg font-semibold text-slate-900 mt-2">The films that share directors with the films [Tiresia] are written by who?</p>
+            <p class="text-sm text-slate-500 mt-4">Ground-truth: <span class="font-semibold text-slate-900">Bertrand Bonello</span></p>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="glass rounded-2xl p-5">
+              <p class="text-xs uppercase tracking-widest text-slate-500">Step 1</p>
+              <p class="text-sm text-slate-600 mt-2">Counterfactual prompting generates $t_0$, $t_1$, and $t_2$ answers.</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-xs uppercase tracking-widest text-slate-500">Step 2</p>
+              <p class="text-sm text-slate-600 mt-2">Panel re-scoring merges answers and computes global probabilities.</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-xs uppercase tracking-widest text-slate-500">Step 3</p>
+              <p class="text-sm text-slate-600 mt-2">CCI combines support and stability to select the final answer.</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-xs uppercase tracking-widest text-slate-500">Output</p>
+              <p class="text-sm text-slate-600 mt-2">Calibrated response aligns with the correct author.</p>
+            </div>
+          </div>
+        </div>
+        <div class="case-shell rounded-3xl p-6 lg:p-8 case-glow">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs uppercase tracking-widest text-slate-400">Live System Trace</p>
+              <p class="text-lg font-semibold text-white">Ca2KG Execution Log</p>
+            </div>
+            <span class="text-xs text-slate-300 bg-white/10 px-3 py-1 rounded-full">MetaQA</span>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-4" id="case-chips">
+            <span class="case-chip px-3 py-1 rounded-full text-xs font-semibold active" data-step="0">t0</span>
+            <span class="case-chip px-3 py-1 rounded-full text-xs font-semibold" data-step="1">t1</span>
+            <span class="case-chip px-3 py-1 rounded-full text-xs font-semibold" data-step="2">t2</span>
+            <span class="case-chip px-3 py-1 rounded-full text-xs font-semibold" data-step="3">panel</span>
+            <span class="case-chip px-3 py-1 rounded-full text-xs font-semibold" data-step="4">CCI</span>
+          </div>
+          <div class="case-output rounded-2xl p-5 mt-4" id="case-output">
+            <div class="text-xs uppercase tracking-widest text-slate-400">Initial Prompt t0</div>
+            <h3 class="text-lg font-semibold text-white mt-2">Baseline Answer</h3>
+            <p class="text-sm text-slate-300 mt-2">Use provided contexts even if incomplete. Output one-line answer.</p>
+            <div class="mt-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200">
+              Answer: <span class="font-semibold text-white">Luca Fazzi</span>
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4 mt-4">
+            <div class="case-step rounded-2xl p-4 text-sm text-slate-200 active" data-step="0">
+              <p class="text-xs uppercase tracking-widest text-slate-400">t0</p>
+              <p class="font-semibold mt-2">Initial prompt</p>
+              <p class="text-xs text-slate-400 mt-1">Answer: Luca Fazzi</p>
+            </div>
+            <div class="case-step rounded-2xl p-4 text-sm text-slate-200" data-step="1">
+              <p class="text-xs uppercase tracking-widest text-slate-400">t1</p>
+              <p class="font-semibold mt-2">Path quality intervention</p>
+              <p class="text-xs text-slate-400 mt-1">Answer: Bertrand Bonello</p>
+            </div>
+            <div class="case-step rounded-2xl p-4 text-sm text-slate-200" data-step="2">
+              <p class="text-xs uppercase tracking-widest text-slate-400">t2</p>
+              <p class="font-semibold mt-2">Reasoning reliability</p>
+              <p class="text-xs text-slate-400 mt-1">Answer: Bertrand Bonello</p>
+            </div>
+            <div class="case-step rounded-2xl p-4 text-sm text-slate-200" data-step="3">
+              <p class="text-xs uppercase tracking-widest text-slate-400">Panel</p>
+              <p class="font-semibold mt-2">Merged answers</p>
+              <p class="text-xs text-slate-400 mt-1">Bonello 0.67 · Fazzi 0.33</p>
+            </div>
+            <div class="case-step rounded-2xl p-4 text-sm text-slate-200 sm:col-span-2" data-step="4">
+              <p class="text-xs uppercase tracking-widest text-slate-400">CCI</p>
+              <p class="font-semibold mt-2">Final calibrated answer</p>
+              <p class="text-xs text-slate-400 mt-1">Bertrand Bonello</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="results" class="py-20 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-14">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4 font-display">Results Snapshot</h2>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto">Ca2KG improves calibration metrics while preserving accuracy across MetaQA and WebQSP.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass rounded-2xl p-6 card-hover">
+          <p class="text-sm uppercase tracking-widest text-slate-500">Trusted Answers</p>
+          <p class="text-3xl font-bold gradient-text">Lower ECE</p>
+          <p class="text-sm text-slate-600">Consistently improved calibration across benchmarks.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <p class="text-sm uppercase tracking-widest text-slate-500">Error Deferrals</p>
+          <p class="text-3xl font-bold gradient-text">Accuracy Hold</p>
+          <p class="text-sm text-slate-600">Maintains or improves predictive accuracy.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <p class="text-sm uppercase tracking-widest text-slate-500">Calibration Gap</p>
+          <p class="text-3xl font-bold gradient-text">Brier ↓</p>
+          <p class="text-sm text-slate-600">Reduced overconfidence in KG-RAG outputs.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="authors" class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-white via-slate-50/70 to-white"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div class="text-center mb-14">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-slate-200 mb-4">
+          <span class="text-sm font-medium text-slate-700">Authors</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4 font-display">
+          <span class="gradient-text">Research Team</span>
+          <span class="text-slate-900"> at RMIT University</span>
+        </h2>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+          Equal contribution marked with ★. Corresponding author marked with ✉.
+        </p>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="glass rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-bold text-slate-900">Jing Ren ★</h3>
+            <span class="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">ORCID</span>
+          </div>
+          <p class="text-sm text-slate-600 mb-2">RMIT University · Melbourne, Australia</p>
+          <p class="text-xs text-slate-500 mb-4">ORCID 0000-0003-0169-1491</p>
+          <a class="text-sm font-semibold text-slate-900" href="mailto:jing.ren@ieee.org">jing.ren@ieee.org</a>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-bold text-slate-900">Bowen Li ★</h3>
+            <span class="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">Author</span>
+          </div>
+          <p class="text-sm text-slate-600 mb-2">RMIT University · Melbourne, Australia</p>
+          <p class="text-xs text-slate-500 mb-4">Equal contribution.</p>
+          <a class="text-sm font-semibold text-slate-900" href="mailto:s3890442@student.rmit.edu.au">s3890442@student.rmit.edu.au</a>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-bold text-slate-900">Ziqi Xu ✉</h3>
+            <span class="text-xs px-2 py-1 rounded-full bg-slate-900 text-white">ORCID</span>
+          </div>
+          <p class="text-sm text-slate-600 mb-2">RMIT University · Melbourne, Australia</p>
+          <p class="text-xs text-slate-500 mb-4">ORCID 0000-0003-1748-5801</p>
+          <a class="text-sm font-semibold text-slate-900" href="mailto:ziqi.xu@rmit.edu.au">ziqi.xu@rmit.edu.au</a>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Xikun Zhang</h3>
+          <p class="text-sm text-slate-600 mb-2">RMIT University · Melbourne, Australia</p>
+          <a class="text-sm font-semibold text-slate-900" href="mailto:xikun.zhang@rmit.edu.au">xikun.zhang@rmit.edu.au</a>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Haytham Fayek</h3>
+          <p class="text-sm text-slate-600 mb-2">RMIT University · Melbourne, Australia</p>
+          <a class="text-sm font-semibold text-slate-900" href="mailto:haytham.fayek@ieee.org">haytham.fayek@ieee.org</a>
+        </div>
+        <div class="glass rounded-2xl p-6 card-hover">
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Xiaodong Li</h3>
+          <p class="text-sm text-slate-600 mb-2">RMIT University · Melbourne, Australia</p>
+          <a class="text-sm font-semibold text-slate-900" href="mailto:xiaodong.li@rmit.edu.au">xiaodong.li@rmit.edu.au</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="paper" class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900"></div>
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative text-white">
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 font-display">When to Trust: Causality-Aware Calibration for KG-RAG</h2>
+      <p class="text-lg text-slate-200 mb-4">Accepted to The Web Conference 2026 (Web4Good track).</p>
+      <p class="text-sm text-slate-300 mb-8">Acceptance rate 21.7% · 95 accepted out of 437 submissions.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a class="inline-flex items-center justify-center px-8 py-4 rounded-xl border border-white/70 text-white font-semibold" href="https://github.com/Aisuko/ca2kg" target="_blank" rel="noreferrer">View Code</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-slate-950 text-slate-400 py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold">WT</div>
+            <div>
+              <p class="text-sm font-semibold text-white">When to Trust</p>
+              <p class="text-xs text-slate-500">Causality-Aware KG-RAG Calibration</p>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500">The Web Conference 2026 · Web4Good track</p>
+        </div>
+        <div class="text-sm">
+          <p class="text-white font-semibold mb-2">Links</p>
+          <div class="flex flex-wrap gap-4">
+            <a class="hover:text-white" href="#framework">Framework</a>
+            <a class="hover:text-white" href="#calibration">Calibration</a>
+            <a class="hover:text-white" href="#case-study">Case Study</a>
+            <a class="hover:text-white" href="#results">Results</a>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-slate-800 mt-8 pt-6 text-xs text-slate-600">© 2026 When to Trust. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    const palettes = [
+      ['#0ea5e9', '#22c55e', '#f59e0b'],
+      ['#14b8a6', '#f97316', '#84cc16'],
+      ['#38bdf8', '#10b981', '#fb923c'],
+      ['#0891b2', '#f59e0b', '#f43f5e']
+    ];
+    let index = 0;
+    setInterval(() => {
+      index = (index + 1) % palettes.length;
+      const [a, b, c] = palettes[index];
+      document.documentElement.style.setProperty('--accent-a', a);
+      document.documentElement.style.setProperty('--accent-b', b);
+      document.documentElement.style.setProperty('--accent-c', c);
+    }, 6000);
+
+    const caseOutput = document.getElementById('case-output');
+    const caseChips = Array.from(document.querySelectorAll('#case-chips .case-chip'));
+    const caseStepsEls = Array.from(document.querySelectorAll('.case-step'));
+    const caseSteps = [
+      {
+        title: 'Initial Prompt t0',
+        subtitle: 'Baseline Answer',
+        body: `
+          <p class="text-sm text-slate-300 mt-2">Use provided contexts even if incomplete. Output one-line answer.</p>
+          <div class="mt-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200">
+            Answer: <span class="font-semibold text-white">Luca Fazzi</span>
+          </div>
+        `
+      },
+      {
+        title: 'Path Quality Intervention t1',
+        subtitle: 'Counterfactual Prompt',
+        body: `
+          <p class="text-sm text-slate-300 mt-2">Assume contexts are poor. Re-select evidence and regenerate.</p>
+          <div class="mt-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200">
+            Answer: <span class="font-semibold text-white">Bertrand Bonello</span>
+          </div>
+        `
+      },
+      {
+        title: 'Reasoning Reliability t2',
+        subtitle: 'Counterfactual Prompt',
+        body: `
+          <p class="text-sm text-slate-300 mt-2">Assume reasoning failed. Re-check contexts and answer again.</p>
+          <div class="mt-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200">
+            Answer: <span class="font-semibold text-white">Bertrand Bonello</span>
+          </div>
+        `
+      },
+      {
+        title: 'Panel-based Re-scoring',
+        subtitle: 'Merged Answers',
+        body: `
+          <div class="mt-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-200 space-y-2">
+            <div>Canonical merge: Bertrand Bonello, Luca Fazzi</div>
+            <div>Counts: Bonello = 2, Fazzi = 1</div>
+            <div>Verbalised prior: {"Bertrand Bonello": 0.67, "Luca Fazzi": 0.33}</div>
+          </div>
+          <div class="mt-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-200">
+            Panel JSON: {"answers":["luca fazzi","bertrand bonello"],"t_0":[0.33,0.67],"t_1":[0.33,0.67],"t_2":[0.33,0.67]}
+          </div>
+        `
+      },
+      {
+        title: 'Causal Calibration Index',
+        subtitle: 'Final Decision',
+        body: `
+          <div class="mt-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-200 space-y-2">
+            <div>CE_var(Bertrand Bonello) = 0.00 · CE_var(Luca Fazzi) = 0.00</div>
+            <div>CE_avg(Bertrand Bonello) = 0.67 · CE_avg(Luca Fazzi) = 0.33</div>
+            <div>CCI(Bertrand Bonello) = 0.67 · CCI(Luca Fazzi) = 0.33</div>
+          </div>
+          <div class="mt-4 bg-emerald-400/20 border border-emerald-400/40 rounded-xl px-4 py-3 text-sm text-emerald-100">
+            Final Answer: <span class="font-semibold text-white">Bertrand Bonello</span>
+          </div>
+        `
+      }
+    ];
+
+    let caseIndex = 0;
+    const renderCaseStep = (step) => {
+      if (!caseOutput) return;
+      caseChips.forEach((chip) => {
+        chip.classList.toggle('active', Number(chip.dataset.step) === step);
+      });
+      caseStepsEls.forEach((card) => {
+        card.classList.toggle('active', Number(card.dataset.step) === step);
+      });
+
+      caseOutput.classList.add('hidden');
+      setTimeout(() => {
+        const data = caseSteps[step];
+        caseOutput.innerHTML = `
+          <div class="text-xs uppercase tracking-widest text-slate-400">${data.title}</div>
+          <h3 class="text-lg font-semibold text-white mt-2">${data.subtitle}</h3>
+          ${data.body}
+        `;
+        caseOutput.classList.remove('hidden');
+      }, 220);
+    };
+
+    if (caseOutput) {
+      renderCaseStep(caseIndex);
+      setInterval(() => {
+        caseIndex = (caseIndex + 1) % caseSteps.length;
+        renderCaseStep(caseIndex);
+      }, 3800);
+    }
+  </script>
+</body>
+</html>
