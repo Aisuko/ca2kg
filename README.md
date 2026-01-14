@@ -74,6 +74,11 @@ jupyter notebook
 - ✅ **Efficient Reasoning**: Optimized multi-hop reasoning with reduced computational overhead
 - ✅ **Comprehensive Evaluation**: Extensive ablation studies and efficiency analysis
 
+---
+
+## 📚 Citation
+
+See `CITATION.cff` for the preferred citation metadata.
 
 ---
 

@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Ca2KG: Causality-Aware Calibration for KG-RAG"
+type: software
+license: MIT
+repository-code: "https://github.com/Aisuko/ca2kg"
+authors:
+  - family-names: Ren
+    given-names: Jing
+  - family-names: Li
+    given-names: Bowen
+  - family-names: Xu
+    given-names: Ziqi
+  - family-names: Zhang
+    given-names: Xikun
+  - family-names: Fayek
+    given-names: Haytham
+  - family-names: Li
+    given-names: Xiaodong
