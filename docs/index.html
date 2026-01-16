@@ -177,7 +177,7 @@
   </style>
 </head>
 <body class="antialiased">
-  <div class="relative min-h-screen overflow-hidden">
+  <div class="relative overflow-hidden">
     <div class="absolute inset-0 -z-10">
       <div class="absolute inset-0 grid-pattern opacity-60"></div>
       <div class="absolute top-[-15%] right-[-10%] h-72 w-72 rounded-full bg-sky-400/20 blur-3xl pulse-glow"></div>
@@ -202,14 +202,14 @@
             <a class="text-slate-700 hover:text-slate-900 transition-colors" href="#results">Results</a>
           </nav>
           <div class="flex items-center gap-3 text-sm">
-            <a class="hidden sm:inline-flex px-4 py-2 rounded-xl bg-white/80 border border-slate-200 hover:shadow-xl transition-all duration-300 font-medium" href="#paper">Paper(soon)</a>
+            <a class="hidden sm:inline-flex px-4 py-2 rounded-xl bg-white/80 border border-slate-200 hover:shadow-xl transition-all duration-300 font-medium" href="https://arxiv.org/abs/2601.09241" target="_blank" rel="noreferrer">Paper</a>
             <a class="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all duration-300 shadow-lg font-medium" href="https://github.com/Aisuko/ca2kg" target="_blank" rel="noreferrer">GitHub</a>
           </div>
         </div>
       </div>
     </header>
 
-    <main class="relative pt-32 pb-16">
+    <main class="relative pt-32 pb-12">
       <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-12 items-center">
         <div class="space-y-8 lg:order-1">
           <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-slate-200 shadow-sm">
@@ -235,8 +235,8 @@
             are trustworthy by pairing counterfactual prompting with panel-based re-scoring.
           </p>
           <div class="flex flex-wrap md:flex-nowrap gap-3">
-            <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all duration-300 shadow-lg font-medium" href="#paper">
-              Read the Paper(soon)
+            <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all duration-300 shadow-lg font-medium" href="https://arxiv.org/abs/2601.09241" target="_blank" rel="noreferrer">
+              Read the Paper
             </a>
             <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/80 border border-slate-200 hover:shadow-xl transition-all duration-300 font-medium" href="#calibration">
               See Calibration
@@ -271,7 +271,7 @@
     </main>
   </div>
 
-  <section id="framework" class="py-20 relative overflow-hidden">
+  <section id="framework" class="pt-12 pb-20 relative overflow-hidden">
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/70 to-transparent"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
       <div class="text-center mb-14">
@@ -543,7 +543,13 @@
         <p class="text-lg text-slate-200 mb-4">Paper 1779 accepted to The Web Conference 2026.</p>
         <p class="text-sm text-slate-300">We received 3370 valid submissions, of which 676 (20.1%) were accepted.</p>
       </div>
-      <div class="grid gap-6 md:grid-cols-2">
+      <div class="grid gap-6 md:grid-cols-3">
+        <div class="glass rounded-3xl p-8 border border-white/10 bg-white/5 flex flex-col h-full">
+          <div class="text-xs uppercase tracking-[0.2em] text-slate-300 mb-3">WWW2026</div>
+          <h3 class="text-xl font-semibold mb-3">Ca2KG Paper</h3>
+          <p class="text-sm text-slate-300 mb-6">Read the full Ca2KG paper on arXiv.</p>
+          <a class="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-white/70 text-white font-semibold hover:bg-white/10 transition-colors mt-auto" href="https://arxiv.org/abs/2601.09241" target="_blank" rel="noreferrer">View on arXiv</a>
+        </div>
         <div class="glass rounded-3xl p-8 border border-white/10 bg-white/5 flex flex-col h-full">
           <div class="text-xs uppercase tracking-[0.2em] text-slate-300 mb-3">Web4Good</div>
           <h3 class="text-xl font-semibold mb-3">Web4Good Track Paper</h3>
